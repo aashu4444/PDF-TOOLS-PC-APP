@@ -1,0 +1,73 @@
+<HomeScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: "10dp"
+
+        GridLayout:
+            rows:2
+            MDToolbar:
+                elevation: 10
+                title: "PDF Tools"
+
+            MDRaisedButton:
+                elevation: 10
+                text: "Upload file to get started"
+                pos_hint: {"center_x": .5, "center_y": .5}
+                on_release: app.file_manager_open("pdf", "Features")
+
+<FeaturesScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: "10dp"
+
+        GridLayout:
+            cols:1
+            MDToolbar:
+                elevation: 10
+                title: "SELECT ANY PDF TOOL."
+                left_action_items: [["keyboard-backspace", lambda x: app.backTo("Home")]]
+
+            TwoLineIconListItem:
+                text: "Encrypt PDF"
+                secondary_text: "Set password on your pdf file."
+                on_release:
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'EncpdfScreen'
+                    
+
+                IconLeftWidget:
+                    icon: "lock"
+
+            TwoLineIconListItem:
+                text: "Decrypt PDF"
+                secondary_text: "Remove password from your pdf file."
+
+                IconLeftWidget:
+                    icon: "lock-off"
+
+
+<EncpdfScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: "10dp"
+
+        GridLayout:
+            cols:1
+            MDToolbar:
+                elevation: 10
+                title: "ENCRYPT PDF."
+                left_action_items: [["keyboard-backspace", lambda x: app.backTo("Features")]]
+               
+       
+            MDTextField:
+                password:True
+                id:encpassword
+                name:'encpassword'
+                mode: "rectangle"
+                hint_text: "Enter password to set."
+                on_text:app.encpassword_ontext(self)
+                
+
+            MDRaisedButton:
+                text: "Encrypt PDF"
+                on_release:app.encryptPdf()
