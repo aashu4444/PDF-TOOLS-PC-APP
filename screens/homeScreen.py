@@ -10,30 +10,21 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivymd.uix.list import TwoLineIconListItem
 from kivymd.uix.list import IconLeftWidget
+from kivy.uix.scrollview import ScrollView
+from kivymd.uix.list import MDList
+from dialogs.settingsDialog import getDialog
 
-KV = '''
-<HomeScreen>:
 
-    GridLayout:
-        cols:1
-        MDToolbar:
-            title:"PDF TOOLS."
 
-        BoxLayout:
-            pos_hint:{"top":0.8}
-            ScrollView:
-                id:homeScrollView
-                MDList:
-                    id:homeLayout
-                
-
-'''
-
-Builder.load_string(KV)
-
-class HomeScreen(Screen):
+class HomeScreen(ScrollView):
     def __init__(self, app, **kw):
         super().__init__(**kw)
+        mdls = MDList()
+        self.pos_hint = {"top":1}
+        
+        self.add_widget(mdls)
+
+        settingsDialog = getDialog(app)
 
         items = [
             {
@@ -46,20 +37,13 @@ class HomeScreen(Screen):
                 "icon":"cog",
                 "text":"Settings",
                 "desc":"Change basic settings.",
-                "on_release":lambda x: print(x)
-            },
-            {
-                "icon":"file-pdf-box",
-                "text":"My Files",
-                "desc":"View your operated pdf files.",
-                "on_release":lambda x: print(x)
+                "on_release":lambda x: settingsDialog.open()
             },
         ]
         
         def setScrollView():
-
-            self.ids.homeScrollView.size_hint = (1, None)
-            self.ids.homeScrollView.size=(Window.width, Window.height - 60) 
+            self.size_hint = (1, None)
+            self.size=(Window.width, Window.height - 60) 
         
         setScrollView() 
 
@@ -76,7 +60,7 @@ class HomeScreen(Screen):
             # Add icon to the list item widget
             widget.add_widget(icon)
 
-            self.ids.homeLayout.add_widget(
+            mdls.add_widget(
                 widget
             )
 

@@ -1,4 +1,3 @@
-from kivymd.uix.list import TwoLineIconListItem
 
 from kivy.lang import Builder
 from datetime import datetime
@@ -8,13 +7,12 @@ from kivymd.app import MDApp
 from kivymd.uix import screen
 from kivymd.uix.filemanager import MDFileManager
 from kivymd.toast import toast
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import Screen
 from tkinter import filedialog as fd
 import tkinter
 from encrypt_pdf_dialog import *
 from tool import Tool
 import PyPDF2
-from kivy.uix.screenmanager import NoTransition
 from kivy.config import Config
 from kivy.core.window import Window
 from kivymd.uix.button import MDRaisedButton
@@ -26,7 +24,44 @@ from screens.homeScreen import HomeScreen
 from screens.myfilesScreen import MyfilesScreen
 from utils import *
 import json
+import json
 
+
+KV = '''
+GridLayout:
+    cols:1
+    MDToolbar:
+        title:"PDF TOOLS."
+    
+    MDBottomNavigation:
+        panel_color: 156/255, 39/255, 176/255, 1
+        id:Navigator
+
+        text_color_active: 1, 1, 1, 0.9
+        text_color_normal: 1, 1, 1, 0.5
+
+        MDBottomNavigationItem:
+            name: 'screen 1'
+            icon: 'home-outline'
+            text:"Home"
+            id:HomeNav
+            
+
+        MDBottomNavigationItem:
+            name: 'FeaturesTab'
+            icon: 'format-list-text'
+            text:"Features"
+            id:FeaturesNav
+
+        MDBottomNavigationItem:
+            name: 'screen 3'
+            icon: 'folder-outline'
+            text:"My Files"
+            id:MyFilesNav
+            
+
+
+'''
 
 
 Config.set('graphics', 'resizable', False)
@@ -43,7 +78,6 @@ root.withdraw()
 
 
 sources = {}
-
 
 
 
@@ -112,16 +146,24 @@ class Pdftools(MDApp):
     def build(self):
         self.theme_cls.primary_palette = "Purple"
         Window.size = (380,600)
-        self.sm = ScreenManager(transition=NoTransition())
-        self.sm.add_widget(FeaturesScreen(self, name="Features"))
-        self.sm.add_widget(HomeScreen(self, name="Home"))
-        self.sm.add_widget(EncpdfScreen(name="EncpdfScreen"))
-        self.sm.add_widget(MyfilesScreen(name="MyfilesScreen"))
-        self.sm.current = "MyfilesScreen"
+        homescreen = HomeScreen(self)
+        featuresscreem = FeaturesScreen(self)
+        myfilesscreen = MyfilesScreen(self)
 
-        return self.sm
+        self.root = Builder.load_string(KV)
+
+        self.root.ids.HomeNav.add_widget(homescreen)
+        self.root.ids.FeaturesNav.add_widget(featuresscreem)
+        self.root.ids.MyFilesNav.add_widget(myfilesscreen)
+
+
+        return self.root
+
+    def onTabsSwitch(self, bottom_navigation_item, name_tab):
+        print(bottom_navigation_item, name_tab)
 
     def operate(self, mystr, dialog=None, processText=None, completeText=None, askDir=False, operationName=None):
+        settings = readSettings()
         with open("myfiles.json", "r") as f:
             data = json.loads(f.read())
 
@@ -130,19 +172,28 @@ class Pdftools(MDApp):
         completeText = toCompleteText(operationName) if completeText==None else completeText
 
         if askDir == False:
-            askedFile = fd.asksaveasfilename(
-                    initialfile=self.srcFile.split("\\")[-1] + operationName.replace(" ", "_") if "\\" in self.srcFile else self.srcFile,
-                    filetypes=(
-                        ("PDF Files", "*.pdf"),
-                    ),
-            )
-            if not askedFile.endswith(".pdf"):
-                askedFile += ".pdf"
+            if settings["default_save_folder"] == "ask_first":
+                askedFile = fd.asksaveasfilename(
+                        initialfile=self.srcFile.split("/")[-1].replace(".pdf", "") + "_" + operationName.replace(" ", "_") + ".pdf" if "/" in self.srcFile else self.srcFile,
+                        filetypes=(
+                            ("PDF Files", "*.pdf"),
+                        ),
+                )
+                if not askedFile.endswith(".pdf"):
+                    askedFile += ".pdf"
 
-            self.selectedDest = askedFile
+                self.selectedDest = askedFile
 
+            else:
+                name = self.srcFile.split("/")[-1].replace(".pdf", "") + "_" + operationName.replace(" ", "_") + ".pdf"
 
-            data.append({"name":askedFile, "src":askedFile, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p")})
+                self.selectedDest = settings["default_save_folder"] + "/" + name 
+
+                askedFile = self.selectedDest
+
+            fileId = data[-1]["id"] + 1 if len(data) != 0 else 1
+            
+            data.append({"name":askedFile, "src":askedFile, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "id":fileId})
 
             with open("myfiles.json", "w") as f:
                 f.write(json.dumps(data))
@@ -210,7 +261,7 @@ class Pdftools(MDApp):
                 # self.file_manager.show("/")
                 self.manager_open = True
 
-                self.sm.current = "Features"
+                self.root.ids.Navigator.switch_tab("FeaturesTab")
 
 
                 self.select_path(self.filename)

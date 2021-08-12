@@ -12,47 +12,26 @@ from kivy.lang import Builder
 
 from kivy.lang import Builder
 from kivy.properties import StringProperty
-
+from kivy.uix.scrollview import ScrollView
+from kivymd.uix.list import MDList
 
 kv = '''
-<FeaturesScreen>:
-    MDBoxLayout:
-        orientation: "vertical"
-
-        GridLayout:
-            cols:1
-
-            MDToolbar:
-                title: "Select a tool!"
-                left_action_items: [["keyboard-backspace", lambda x:root.app.backTo("Features")]]
-
-            ScrollView:
-                id:myscrollview
-                MDList:
-                    id: scroll
-
-
-            
-
-        MDFloatingActionButtonSpeedDial:
-            data: app.data
-            root_button_anim: True
-            hint_animation: True
-            label_text_color: 1,1,1,1
-            callback:app.callback
+MDFloatingActionButtonSpeedDial:
+    data: app.data
+    root_button_anim: True
+    hint_animation: True
+    label_text_color: 1,1,1,1
+    callback:app.callback
 '''
 
-Builder.load_string(kv)
 
-class customListItem(TwoLineIconListItem):
-    icon = StringProperty()
-
-
-
-class FeaturesScreen(Screen):
+class FeaturesScreen(ScrollView):
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
         self.app = app
+        self.pos_hint = {"top":1}
+        mdls = MDList()
+        self.add_widget(mdls)
 
 
         features = [
@@ -97,8 +76,8 @@ class FeaturesScreen(Screen):
 
         
         def setScrollView():
-            self.ids.myscrollview.size_hint = (1, None)
-            self.ids.myscrollview.size=(Window.width, Window.height - 60)  
+            self.size_hint = (1, None)
+            self.size=(Window.width, Window.height - 60)  
         
         setScrollView()  
 
@@ -120,7 +99,8 @@ class FeaturesScreen(Screen):
             # Add icon to the list item widget
             widget.add_widget(icon)
 
-            self.ids.scroll.add_widget(
+            mdls.add_widget(
                 widget
             )
 
+        Builder.load_string(kv)

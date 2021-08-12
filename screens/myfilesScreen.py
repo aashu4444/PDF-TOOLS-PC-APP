@@ -1,121 +1,93 @@
 
-from kivymd.uix import label
+from kivymd.uix import dialog, label
+from kivymd.uix.behaviors import elevation
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.screen import MDScreen
 from RoundedCornersCard import RoundedCornersCard
 from kivy.uix.boxlayout import BoxLayout
 
 from kivy.uix.gridlayout import GridLayout
 from kivymd.uix.label import MDLabel, MDIcon
-from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 from kivy.lang import Builder
 from kivy.core.window import Window
-from kivymd.uix.list import ThreeLineIconListItem, TwoLineIconListItem
-from kivymd.uix.list import IconLeftWidget
+from kivymd.uix.list import MDList
+from kivymd.color_definitions import theme_colors
 import json
-from kivymd.uix.card import MDCardSwipe
 from kivy.properties import StringProperty
 from RoundedCornersCard import RoundedCornersCard
 from kivymd.uix.card import MDCard
 from kivymd.uix.label import MDIcon, MDLabel
+from kivymd.uix.card import MDSeparator
+from kivymd.uix.boxlayout import MDBoxLayout
+from dialogs.deleteMyFileDialog import deleteMyFileDialog
 
-KV = '''
-<MyfilesScreen>:
-    MDScreen:
-        GridLayout:
-            cols:1
-            MDToolbar:
-                title:"My operated pdf files."
-
-
-            MDCard:
-                orientation: "vertical"
-                size_hint: .5, None
-                height: 120
-                pos_hint: {"center_x": .5, "center_y": .5}
-                padding:"8dp"
-
-                
-                MDBoxLayout:
-                    orientation:"vertical"
-                    MDBoxLayout:
-                        size_hint_y:None
-                        height:70
-                        MDIcon:
-                            icon:"language-python"
-                            size_hint_x: 0.2
-                            halign:"center"
-                        MDBoxLayout:
-                            orientation:"vertical"
-                            MDLabel:
-                                markup:True
-                                text:"[b]pdf-tools-test.pdf[/b][color=969191]F:/AllTets/pdf-tools-ss.pdf[/color]"
-
-                    MDSeparator:
-                    
-                    MDLabel:
-                        text:"18 June 2021 at 15:30 PM"
-                        halign:"right"
-
-                    
-                        
-
-                
-
-'''
-
-Builder.load_string(KV)
-
-
-class MyfilesScreen(Screen):
-    def __init__(self, **kw):
+class MyfilesScreen(ScrollView):
+    def __init__(self, app, **kw):
         super().__init__(**kw)
+        self.app = app
+        self.mdls = MDList(spacing=40)
+        self.add_widget(self.mdls)
+        self.pos_hint = {"top":1}
 
         with open("myfiles.json", "r") as f:
-            files = json.loads(f.read())
+            self.files = json.loads(f.read())
 
-        # def setScrollView():
-        #     self.ids.filesScrollView.size_hint = (1, None)
-        #     self.ids.filesScrollView.size=(Window.width, Window.height - 60)  
+
+        def setScrollView():
+            self.size_hint = (1, None)
+            self.size=(Window.width, Window.height - 60)  
         
-        # setScrollView()  
-
-        # for file in files:
-        #     filename = file.get("name").split("/")[-1]
-        #     print(file.get("name").split("/"))
-        #     src = file.get("src")
-        #     timestamp = file.get("timestamp")
-
-        #     mainLayout = BoxLayout(orientation="vertical")
-        #     cardLayout = GridLayout(cols=2)
-        #     labelsLayout = GridLayout(rows=2)
-
-        #     heading = MDLabel(text=filename)
-        #     path = MDLabel(text=src)
-
-        #     labelsLayout.add_widget(heading)
-        #     labelsLayout.add_widget(path)
+        setScrollView() 
 
 
-        #     icon = MDIcon(icon="file-pdf-box", size_hint_x=0.3, halign="center")
+        self.dialog = deleteMyFileDialog(app)
 
+        self.updateFiles()
 
-        #     card = RoundedCornersCard()
+    def openDeleteFileDialog(self, widget):
+        self.app.fileId = self.deleteFileButtons[widget]
+        self.app.myfilesScreen = self
+        self.dialog.open()
 
-        #     cardLayout.add_widget(icon)
-        #     cardLayout.add_widget(labelsLayout)
+    def updateFiles(self,f=None, read=False):
 
-        #     card.add_widget(cardLayout)
+        self.deleteFileButtons = {}
 
+        for file in self.files:
+            filename = file.get("name").split("/")[-1]
+            print(file.get("name").split("/"))
+            src = file.get("src")
+            timestamp = file.get("timestamp")
+            id = file.get('id')
+            print(id)
 
-        #     timeStampCard = RoundedCornersCard(size_hint_y=None, height=20)
-        #     timeStampText = MDLabel(text="Saved on 31 December 2020 at 12:59 PM")
+            box_1 = MDBoxLayout(size_hint_y=None, height=80)
+            icon = MDIcon(icon="language-python", size_hint_x=0.2, halign="center")
+            filesDetailLayout = GridLayout(rows=2)
+            filenameLabel = MDLabel(text=f"{filename}\n{src}")
+            # filesrcLabel = MDLabel(theme_text_color="Secondary", text=src)
+            filesDetailLayout.add_widget(filenameLabel)
+            # filesDetailLayout.add_widget(filesrcLabel)
+            box_1.add_widget(icon)
+            box_1.add_widget(filesDetailLayout)
 
-        #     timeStampCard.add_widget(timeStampText)
+            box_2 = MDBoxLayout(size_hint_y=None, height=40)
+            deleteButton = MDFlatButton(on_release=lambda x: self.openDeleteFileDialog(x))
+            deleteButton.add_widget(MDIcon(icon="trash-can-outline", halign="center"))
+            timeStampLabel = MDLabel(text=timestamp, halign="right")
+            box_2.add_widget(deleteButton)
+            box_2.add_widget(timeStampLabel)
 
-        #     mainLayout.add_widget(card)
-        #     mainLayout.add_widget(timeStampCard)
+            card = MDCard(orientation="vertical",size_hint=(.5, None), height=(box_1.height + box_2.height), padding="8dp", elevation=5)
 
-        #     self.ids.filesList.add_widget(mainLayout)
+            card.add_widget(box_1)
+            card.add_widget(MDSeparator())
+            card.add_widget(box_2)
+
+            self.mdls.add_widget(card)
+
+            self.deleteFileButtons[deleteButton] = id
 
 
 

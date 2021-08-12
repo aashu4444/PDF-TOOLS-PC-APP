@@ -1,3 +1,5 @@
+import json
+
 def toProcessText(text):
     splitted = text.split(" ")
     sentance = ""
@@ -35,4 +37,10 @@ def toCompleteText(text):
 
     return sentance
 
+def writeSettings(data):
+    with open("settings.json", "w") as f:
+        f.write(data)
 
+def readSettings():
+    with open("settings.json", "r") as f:
+        return json.loads(f.read())
