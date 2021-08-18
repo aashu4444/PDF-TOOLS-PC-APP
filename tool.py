@@ -133,6 +133,7 @@ class Tool():
     def extract_images(self, saveTo=None):
         file = self.src
         pdf_file = fitz.open(file)
+        dstImages = []
 
 
         for current_page_index in self.pages:
@@ -141,14 +142,21 @@ class Tool():
                 xref = img[0]
                 image = fitz.Pixmap(pdf_file, xref)
 
+                imageName = "{}/image{}-{}.png".format(saveTo,current_page_index, image_index)
+
                 #if it is a is GRAY or RGB image
                 if image.n < 5:        
-                    image.writePNG("{}/image{}-{}.png".format(saveTo,current_page_index, image_index))
+                    image.writePNG(imageName)
 
                 #if it is CMYK: convert to RGB first
                 else:                
                     new_image = fitz.Pixmap(fitz.csRGB, image)
-                    new_image.writePNG("{}/image{}-{}.png".foramt(saveTo,current_page_index, image_index))
+
+                    new_image.writePNG(imageName)
+
+                dstImages.append(imageName)
+
+        Tool.dstImages = dstImages
 
     def splitPages(self, saveTo, close=True):
         if self.requested_pages[0] == "all":
@@ -175,3 +183,35 @@ class Tool():
         writePath.close()
 
         return self.pdf_reader, self.pdf_writer
+
+    def merge_pdf(self, position=None, fileobjs=None, saveTo=None, pages=None):
+        """
+        Combines 1 or more pdf files into one pdf file.
+        fileobjs: tuple: contains path of pdf files to merge
+        saveTo: Where to save the pdf file
+        """
+
+
+        # If user not given the position then set it to the length of uploaded pdf file
+        if position == None or position == "":
+            position = int(self.pdf_reader.getNumPages())
+        
+        else:
+            position = int(position)
+
+        # Create a blank pdf file merger object
+        merger = PyPDF2.PdfFileMerger()
+
+        fileobjs = list(fileobjs)
+
+        merger.merge(position=0,fileobj=open(self.src, "rb"))
+
+        # Convert the file src in fileobjs to a python's file object
+        for index, item in enumerate(fileobjs):
+            fileobjs[index] = open(item, "rb")
+        
+        for i in fileobjs:
+            merger.merge(position=position,fileobj=i, pages=(pages[0], pages[1] if pages[1] != "end" else int(PyPDF2.PdfFileReader(i).getNumPages())))
+        
+        # Save the merged pdf file
+        Tool.save_pdf(merger, saveTo)

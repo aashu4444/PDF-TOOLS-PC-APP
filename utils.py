@@ -44,3 +44,30 @@ def writeSettings(data):
 def readSettings():
     with open("settings.json", "r") as f:
         return json.loads(f.read())
+
+def ReadMyFiles():
+    with open("myfiles.json", "r") as f:
+        return json.loads(f.read())
+
+def WriteMyFiles(data, append=False):
+    with open("myfiles.json", "r") as f:
+        loadedData = json.loads(f.read())
+
+    with open("myfiles.json", "w") as f:
+        if append:
+            loadedData.append(data)
+            f.write(json.dumps(loadedData))
+        else:
+            f.write(json.dumps(data))
+
+def truncate(givenStr, length, sliceFrom=0):
+    if len(givenStr) > length:
+        return givenStr[sliceFrom:length] + "..."
+    else:
+        return givenStr
+
+def updateMyFiles(app):
+    try:
+        app.myfilesscreen.updateFiles()
+    except Exception as e:
+        pass

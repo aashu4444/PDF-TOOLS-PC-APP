@@ -6,15 +6,12 @@ kv = """
 <RoundedCornersCard>:
     ripple_behavior:True
     orientation: "vertical"
-    size_hint_x: 0.8
-    size_hint_y:1
-    elevation: 20
     canvas:
         Color:
             rgb: 255/255, 255/255, 255/255
         RoundedRectangle:
-            size:(self.size[0] + 20, 80)
-            pos:(self.pos[0] - 10, self.pos[1] - 6)
+            size:(self.size[0] + 20, self.size[1] + 20)
+            pos:(self.pos[0] - 10, self.pos[1] - 10)
             
             radius: (25,25,25,25)
 """

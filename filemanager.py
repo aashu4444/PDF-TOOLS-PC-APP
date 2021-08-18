@@ -7,6 +7,11 @@ class FileManager:
     def askFile(self, title):
         asked = fd.askopenfilename(title=title, filetypes=(("PDF Files", "*.pdf"), ))
         self.askedFile = asked
+    
+    def askFiles(self, title):
+        asked = fd.askopenfilenames(title=title, filetypes=(("PDF Files", "*.pdf"), ))
+        self.askedFiles = asked
+        return asked
 
     def askDir(self, title):
         askedDir = fd.askdirectory(title=title)

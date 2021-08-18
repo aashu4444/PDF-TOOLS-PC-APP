@@ -38,13 +38,16 @@ def deleteFile(dialog, app):
     with open("myfiles.json", "r") as f:
         loaded = json.loads(f.read())
 
-        for i in loaded:
+        for index, i in enumerate(loaded):
             if i["id"] == app.fileId:
                 loaded.remove(i)
 
                 if str(dialog.content_cls.ids.checkBox.state) == "down":
-                    os.remove(i["src"])
-
+                    try:
+                        os.remove(i["src"])
+                    except Exception as e:
+                        pass
+                
         dataToWrite = json.dumps(loaded)
 
     with open("myfiles.json", "w") as file:
@@ -54,7 +57,7 @@ def deleteFile(dialog, app):
 
     with open("myfiles.json", "r") as file:
         app.myfilesScreen.files = json.loads(file.read())
-        app.myfilesScreen.ids.filesList.clear_widgets()
+        app.myfilesScreen.mdls.clear_widgets()
         app.myfilesScreen.updateFiles(file, read=True)
         dialog.dismiss()
 

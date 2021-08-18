@@ -1,3 +1,4 @@
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -6,14 +7,15 @@ from kivymd.uix.list import IconLeftWidget
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineIconListItem
 from kivymd.uix.toolbar import MDToolbar
-from kivy.core.window import Window
 from kivy.properties import StringProperty
 from kivy.lang import Builder
 
 from kivy.lang import Builder
 from kivy.properties import StringProperty
-from kivy.uix.scrollview import ScrollView
+from widgets.myscrollview import MyScrollView
 from kivymd.uix.list import MDList
+from kivymd.uix.button import MDFloatingActionButtonSpeedDial
+from dialogs.mergePdfDialog import getMergePdfDialog
 
 kv = '''
 MDFloatingActionButtonSpeedDial:
@@ -25,14 +27,26 @@ MDFloatingActionButtonSpeedDial:
 '''
 
 
-class FeaturesScreen(ScrollView):
+class FeaturesScreen(GridLayout):
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
+        self.cols=1
+        self.scrollview = MyScrollView()
+
         self.app = app
         self.pos_hint = {"top":1}
         mdls = MDList()
-        self.add_widget(mdls)
+        self.scrollview.add_widget(mdls)
 
+        speedDialBtn = MDFloatingActionButtonSpeedDial(
+            data=app.data,
+            root_button_anim= True,
+            hint_animation= True,
+            label_text_color= (1,1,1,1),
+            callback=app.callback,
+        )
+
+        mergePdfDialog = getMergePdfDialog(app)
 
         features = [
             {
@@ -71,17 +85,13 @@ class FeaturesScreen(ScrollView):
                 "icon":"format-page-break",
                 "on_release":lambda x: app.operate(mystr='self.mytool.save_operation_pages(self.selectedDest)', operationName=x.text),
             },
+            {
+                "title":"Merge PDF",
+                "desc":"Combine 1 or more pdf files into one pdf file.",
+                "icon":"merge",
+                "on_release":lambda x: mergePdfDialog.open(),
+            },
         ]
-
-
-        
-        def setScrollView():
-            self.size_hint = (1, None)
-            self.size=(Window.width, Window.height - 60)  
-        
-        setScrollView()  
-
-        Window.bind(on_resize=lambda a,b,c:setScrollView())        
 
 
         for feature in features:
@@ -102,5 +112,8 @@ class FeaturesScreen(ScrollView):
             mdls.add_widget(
                 widget
             )
+
+        self.add_widget(self.scrollview)
+        self.add_widget(speedDialBtn)
 
         Builder.load_string(kv)
