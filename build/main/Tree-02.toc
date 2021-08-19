@@ -1,0 +1,8 @@
+('F:\\Code Playground\\pdf tools\\Application\\PC\\app-env\\share\\glew\\bin',
+ None,
+ [],
+ 'DATA',
+ [('glew32.dll',
+   'F:\\Code Playground\\pdf '
+   'tools\\Application\\PC\\app-env\\share\\glew\\bin\\glew32.dll',
+   'DATA')])
