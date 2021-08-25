@@ -38,27 +38,52 @@ def toCompleteText(text):
     return sentance
 
 def writeSettings(data):
+    """
+    Writes given data to settings.json
+    """
     with open("settings.json", "w") as f:
-        f.write(data)
+        try:
+            data.get("Something")
+            f.write(json.dumps(data))
+        
+        except Exception as e:
+            f.write(data)
 
 def readSettings():
+    """
+    Reads and loads data from settings.json
+    """
     with open("settings.json", "r") as f:
         return json.loads(f.read())
 
 def ReadMyFiles():
+    """
+    Reads and loads data from myfiles.json
+    """
     with open("myfiles.json", "r") as f:
         return json.loads(f.read())
+
+
+def updateMyFiles(app):
+    """
+    Updates the My Files tab
+    """
+    try:
+        app.myfilesscreen.updateFiles()
+    except Exception as e:
+        pass
 
 def WriteMyFiles(data, append=False):
     with open("myfiles.json", "r") as f:
         loadedData = json.loads(f.read())
 
     with open("myfiles.json", "w") as f:
-        if append:
-            loadedData.append(data)
-            f.write(json.dumps(loadedData))
+        if append == True:
+                loadedData.append(data)
+                f.write(json.dumps(loadedData))
         else:
             f.write(json.dumps(data))
+
 
 def truncate(givenStr, length, sliceFrom=0):
     if len(givenStr) > length:
@@ -66,8 +91,10 @@ def truncate(givenStr, length, sliceFrom=0):
     else:
         return givenStr
 
-def updateMyFiles(app):
-    try:
-        app.myfilesscreen.updateFiles()
-    except Exception as e:
-        pass
+
+
+def emptyToolbarActions(app):
+    """
+    Remove right action items from toolbar.
+    """
+    app.root.ids.AppToolbar.right_action_items = []

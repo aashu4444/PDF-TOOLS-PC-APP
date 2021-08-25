@@ -1,4 +1,5 @@
 # Imports from kivy
+from tkinter.constants import E
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.screenmanager import Screen
@@ -46,6 +47,8 @@ import json
 
 import time
 
+
+from classes.ActionCheckBox import ActionCheckBox
 
 # The kv file of app
 KV = '''
@@ -209,6 +212,8 @@ class Pdftools(MDApp):
                 ],
             )
 
+        
+
 
     # This function will call when user type something on a text field
     def text_ontext(self, widget):
@@ -251,6 +256,11 @@ class Pdftools(MDApp):
         # if len(self.myfiles) != 0:
         #     self.root.ids.MyFilesNav.remove_widget(self.root.ids.NoFilesAvailableMessage)
         #     self.root.ids.MyFilesNav.add_widget(myfilesscreen)
+
+
+        self.action_checkbox = ActionCheckBox(self)
+
+        self.namessage = self.root.ids.NoFilesAvailableMessage
 
         # Return the loaded kv
         return self.root
@@ -329,10 +339,7 @@ class Pdftools(MDApp):
 
                 
                 # Add the new files screen to the myfiles tab because now a operated file is available!
-                try:
-                    self.myfilesscreen.updateFiles()
-                except Exception as e:
-                    pass
+                updateMyFiles(self)
         
         # If user wants to ask a directory
         else:
@@ -371,7 +378,7 @@ class Pdftools(MDApp):
 
                 WriteMyFiles(data={"name":self.selectedDest, "src":self.selectedDest, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "operationName":operationName ,"id":fileId, "srcImages":Tool.dstImages}, append=True)
 
-                updateMyFiles(self)
+            updateMyFiles(self)
 
             processDialog.dismiss()
 
@@ -503,7 +510,7 @@ class Pdftools(MDApp):
 
         This function show the right action items of toolbar when user opens the myfiles tab and hides these item when user leaves the tab.
 
-        Also this function create a myfilesscreen and adds to to the app if the screen not exists.
+        Also this function create a myfilesscreen and adds to the app if the screen not exists.
 
         code: 1 to show and 0 to hide
         """
@@ -511,26 +518,37 @@ class Pdftools(MDApp):
         # If there are no items in toolbar then add item
         if code == 1:
             # Add the right action items to the toolbar
-            self.root.ids.AppToolbar.right_action_items = [["checkbox-blank-outline", lambda x: app.toggleCheckAll(x)]]
+            self.action_checkbox.show()
 
 
-            # Try to access myfilesscreen if it s not exists then create it
+            # Try to access myfilesscreen, if not exists then create it
             try:
                 self.myfilesscreen
+
+                # if myfilesscreen is accesible then check that the user's operated files are available
+                if len(ReadMyFiles()) != 0:
+                    # Remove the No Files available message because there are some files are available to show
+                    self.root.ids.MyFilesNav.clear_widgets()
+
+                    # Add available files to the UI
+                    self.root.ids.MyFilesNav.add_widget(self.myfilesscreen)
+
+
+
 
             except Exception as e:
                 # Create a instance of myfilesscreen
                 self.myfilesscreen = MyfilesScreen(self)
 
                 # Add the myfilesscreen to the root and remove the message if there are some operated file.
-                if len(self.myfiles) != 0:
-                    self.root.ids.MyFilesNav.remove_widget(self.root.ids.NoFilesAvailableMessage)
+                if len(ReadMyFiles()) != 0:
+                    self.root.ids.MyFilesNav.clear_widgets()
                     self.root.ids.MyFilesNav.add_widget(self.myfilesscreen)
 
 
         # If there are some items in toolbar then hide then
         else:
-            self.root.ids.AppToolbar.right_action_items = []
+            self.action_checkbox.hide()
 
 
 

@@ -5,6 +5,7 @@ from kivymd.uix.button import MDFlatButton
 from filemanager import FileManager
 import json
 from kivymd.uix.menu import MDDropdownMenu
+from utils import writeSettings
 
 KV = '''
 <settingsDialogCls>:
@@ -38,12 +39,14 @@ class settingsDialogCls(BoxLayout):
             {
                 "text": f"Ask first",
                 "viewclass": "OneLineListItem",
-                "on_release":self.askFirst
+                "on_release":lambda : self.menu.dismiss(), # Close the dropdown
+                "on_press": self.askFirst
             },
             {
                 "text": f"Browse",
                 "viewclass": "OneLineListItem",
-                "on_release":self.askDefaultSaveFolder
+                "on_release":lambda : self.menu.dismiss(), # Close the dropdown
+                "on_press":self.askDefaultSaveFolder
             },
         ]
 
@@ -69,18 +72,27 @@ class settingsDialogCls(BoxLayout):
         
         loaded["default_save_folder"] = "ask_first"
 
-        self.writeSettings(json.dumps(loaded))
+        # Change text of myDefaultSavePath label to ask_first
+        self.ids.myDefaultSavePath.text = "Default save folder: ask_first"
+
+        writeSettings(loaded)
 
 
     def askDefaultSaveFolder(self):
         filemanager = FileManager()
         filemanager.askDir(title="Select a default path where all pdf file will be saved.")
 
-        loaded = json.loads(self.readSettings())
+        # If user selected a directory
+        if filemanager.askedDir != "":
+            loaded = json.loads(self.readSettings())
 
-        loaded["default_save_folder"] = filemanager.askedDir
-        
-        self.writeSettings(json.dumps(loaded))
+            loaded["default_save_folder"] = filemanager.askedDir
+
+            # Change text of myDefaultSavePath label to the selected directory's path
+            self.ids.myDefaultSavePath.text = "Default save folder: " + filemanager.askedDir
+            
+            # Write the selected directory's path to settings.json
+            self.writeSettings(json.dumps(loaded))
 
 
 def getDialog(app):
