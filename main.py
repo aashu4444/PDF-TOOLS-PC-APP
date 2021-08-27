@@ -25,7 +25,7 @@ from screens.myfilesScreen import MyfilesScreen
 from datetime import datetime
 
 # filedialog - to open dialogs
-from tkinter import filedialog as fd 
+from tkinter import Widget, filedialog as fd 
 import tkinter
 
 # Some utility functions
@@ -45,7 +45,7 @@ from dialogs.deleteSelectedMyFiles import deleteSelectedMyFilesDialog
 
 import json
 
-import time
+from filemanager import FileManager
 
 
 from classes.ActionCheckBox import ActionCheckBox
@@ -173,6 +173,8 @@ class Pdftools(MDApp):
 
         
         self.wrote = ""
+        self.wroteInputs = {}
+
         self.ReadMyFiles = ReadMyFiles
 
         # The data of speedDial btn
@@ -190,7 +192,7 @@ class Pdftools(MDApp):
                 buttons=[
                     MDFlatButton(
                         text="ENCRYPT", text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.operate(mystr="self.mytool.encrypt(self.wrote, self.selectedDest)",dialog=self.encpdfDialog, processText="ENCRYPTING PDF PLEASE WAIT...", completeText="PDF ENCRYPTED", operationName="Encrypt PDF")
+                        on_release=lambda x: self.operate(mystr="self.mytool.encrypt(self.wrote, self.selectedDest)",dialog=self.encpdfDialog, processText="ENCRYPTING PDF PLEASE WAIT...", completeText="PDF ENCRYPTED", operationName="Encrypt PDF") if self.wroteInputs.get(self.encpdfDialog.content_cls.ids.EncPass, "") != '' else toast(text="Please enter a password to set!", background=[1,0,0,1])
                     ),
                 ],
             )
@@ -216,14 +218,28 @@ class Pdftools(MDApp):
 
 
     # This function will call when user type something on a text field
-    def text_ontext(self, widget):
+    def text_ontext(self, widget, inpType="str"):
+        if inpType == "int":
+            try:
+                int(widget.text)
+            except Exception as e:
+                widget.text = widget.text[0:-1]
+        
         # Change wrote property to the text of text field
         self.wrote = widget.text
 
-    def set(self, key, value):
+        self.wroteInputs[widget] = widget.text
+
+    def set(self, key, value, **kwargs):
         """
         Sets a key,value pair in inputData var of the app.
         """
+        if kwargs.get("forceInt") == True:
+            try:
+                int(kwargs.get("widget").text)
+            except Exception as e:
+                kwargs.get("widget").text = kwargs.get("widget").text[0:-1]
+            
         self.inputData[key] = value
 
     # This function will call when the run method of this class is called
@@ -276,116 +292,129 @@ class Pdftools(MDApp):
         operationName: the name of operation
         """
 
+        try:
+            # Read the settings files
+            settings = readSettings()
+            with open("myfiles.json", "r") as f:
+                data = json.loads(f.read())
 
-        # Read the settings files
-        settings = readSettings()
-        with open("myfiles.json", "r") as f:
-            data = json.loads(f.read())
-
-        
-        # Get process text from operation name
-        processText = toProcessText(operationName) if processText==None else processText
-
-        # Get complete text from operation name
-        completeText = toCompleteText(operationName) if completeText==None else completeText
-
-        # The default name to show in filedialog
-        initialName = self.srcFile.split("/")[-1].replace(".pdf", "") + "_" + operationName.replace(" ", "_") + ".pdf" if "/" in self.srcFile else self.srcFile
-
-        # If user want to ask a pdf file
-        if askDir == False:
-            # ask a pdf file if default_save_folder in settings is set to "ask_first"
-            if settings["default_save_folder"] == "ask_first":
-                # Ask the pdf file
-                askedFile = fd.asksaveasfilename(
-                        initialfile=initialName,
-                        filetypes=(
-                            ("PDF Files", "*.pdf"),
-                        ),
-                )
-
-                if askedFile != "":
-                    # if the user not type extension then add it
-                    if not askedFile.endswith(".pdf"):
-                        askedFile += ".pdf"
-
-
-                    # Set the app's selected destination to askedFile
-                    self.selectedDest = askedFile
-
-                else:
-                    self.selectedDest = None
-
-            # if the folder path in aleready set in default_save_folder in settings. so get the path
-            else:
-                # Set the app's selected destination to default_save_folder
-                self.selectedDest = settings["default_save_folder"] + "/" + initialName 
-
-                # Set the asked file to selected destination
-                askedFile = self.selectedDest
-
-            # Continue the code if user selected a pdf file
-            if askedFile != "":
-                # Create the id for current pdf file
-                fileId = data[-1]["id"] + 1 if len(data) != 0 else 1
-
-                
-                # Add the data of current pdf file to data variable
-                data.append({"name":self.srcFile, "src":askedFile, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "operationName":operationName ,"id":fileId})
-
-                # Write the data to myfiles.json
-                with open("myfiles.json", "w") as f:
-                    f.write(json.dumps(data))
-
-                
-                # Add the new files screen to the myfiles tab because now a operated file is available!
-                updateMyFiles(self)
-        
-        # If user wants to ask a directory
-        else:
-            if settings["default_save_folder"] == "ask_first":
-                # Ask directory
-                askedDir = fd.askdirectory()
             
+            # Get process text from operation name
+            processText = toProcessText(operationName) if processText==None else processText
+
+            # Get complete text from operation name
+            completeText = toCompleteText(operationName) if completeText==None else completeText
+
+            # The default name to show in filedialog
+            initialName = self.srcFile.split("/")[-1].replace(".pdf", "") + "_" + operationName.replace(" ", "_") + ".pdf" if "/" in self.srcFile else self.srcFile
+
+            # If user want to ask a pdf file
+            if askDir == False:
+                # ask a pdf file if default_save_folder in settings is set to "ask_first"
+                if settings["default_save_folder"] == "ask_first":
+                    # Ask the pdf file
+                    askedFile = FileManager().askSaveAs(title="Select path to save operated file.", initFile=initialName)
+
+                    if askedFile != "":
+                        # if the user not type extension then add it
+                        if not askedFile.endswith(".pdf"):
+                            askedFile += ".pdf"
+
+
+                        # Set the app's selected destination to askedFile
+                        self.selectedDest = askedFile
+
+                    else:
+                        self.selectedDest = None
+
+                # if the folder path in aleready set in default_save_folder in settings. so get the path
+                else:
+                    # Set the app's selected destination to default_save_folder
+                    self.selectedDest = settings["default_save_folder"] + "/" + initialName 
+
+                    # Set the asked file to selected destination
+                    askedFile = self.selectedDest
+
+                # Continue the code if user selected a pdf file
+                if askedFile != "":
+                    # Create the id for current pdf file
+                    fileId = data[-1]["id"] + 1 if len(data) != 0 else 1
+
+                    
+                    # Add the data of current pdf file to data variable
+                    data.append({"name":self.srcFile, "src":askedFile, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "operationName":operationName ,"id":fileId})
+
+                    # Write the data to myfiles.json
+                    with open("myfiles.json", "w") as f:
+                        f.write(json.dumps(data))
+
+                    
+                    # Add the new files screen to the myfiles tab because now a operated file is available!
+                    updateMyFiles(self)
+            
+            # If user wants to ask a directory
             else:
-                askedDir = settings["default_save_folder"]
+                if settings["default_save_folder"] == "ask_first":
+                    # Ask directory
+                    askedDir = FileManager().askDir(title="Select a directory to save opereated pdf.")
+                
+                else:
+                    askedDir = settings["default_save_folder"]
 
-            # Set the app's selected destination to askedDir
-            self.selectedDest = askedDir if askedDir != "" else None
+                # Set the app's selected destination to askedDir
+                self.selectedDest = askedDir if askedDir != "" else None
 
 
-        # Continue if user selected a pdf file
-        if self.selectedDest != None:
-            # If there are any dialog to close then close it
-            if dialog != None:
-                dialog.dismiss()
+            # Continue if user selected a pdf file
+            if self.selectedDest != None:
+                # If there are any dialog to close then close it
+                if dialog != None:
+                    dialog.dismiss()
 
-            # Dialog to show when the operation is in process
-            processDialog = MDDialog(text=processText.upper())
+                # Dialog to show when the operation is in process
+                processDialog = MDDialog(text=processText.upper())
 
-            # Dialog to show when the operation is completed
-            completeDialog = MDDialog(text=completeText.upper())
+                # Dialog to show when the operation is completed
+                completeDialog = MDDialog(text=completeText.upper())
 
-            # Open the processDialog
-            processDialog.open()
+                # Open the processDialog
+                processDialog.open()
 
-            # Start operating the pdf file
-            eval(mystr)
+                # Start operating the pdf file
+                eval(mystr)
 
-            # If user is extracting images from pdf
-            if "extract_images" in mystr.lower():
-                fileId = data[-1]["id"] + 1 if len(data) != 0 else 1
+                # If user is extracting images from pdf
+                if "extract_images" in mystr.lower():
+                    fileId = data[-1]["id"] + 1 if len(data) != 0 else 1
 
-                WriteMyFiles(data={"name":self.selectedDest, "src":self.selectedDest, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "operationName":operationName ,"id":fileId, "srcImages":Tool.dstImages}, append=True)
+                    WriteMyFiles(data={"name":self.selectedDest, "src":self.selectedDest, "timestamp":datetime.now().strftime("%d %B %Y at %I:%M %p"), "operationName":operationName ,"id":fileId, "srcImages":Tool.dstImages}, append=True)
 
-            updateMyFiles(self)
+                updateMyFiles(self)
+
+                processDialog.dismiss()
+
+
+                # Open the completeDialog
+                completeDialog.open()
+
+        # Handle error during the operation time
+
+        except PyPDF2.utils.PdfReadError as e:
+            toast("Please enter valid password!", background=[1,0,0,1])
+            processDialog.dismiss()
+
+        except ValueError as verro:
+            if ("invalid literal for int() with base 10: ''" in str(verro)):
+                toast("Please enter valid values to merge pdf!", background=[115/255,45/255,127/255,1])
+                
+            else:
+                toast("This PDF file is encrypted!", background=[1,0,0,1])
 
             processDialog.dismiss()
 
-
-            # Open the completeDialog
-            completeDialog.open()
-
+        except AttributeError as attrerror:
+            toast("Can't take operation on a encrypted pdf!", background=[115/255,45/255,127/255,1])
+            processDialog.dismiss()
         
 
     def callback(self, instance):
@@ -422,10 +451,7 @@ class Pdftools(MDApp):
         """
 
         # Ask the pdf file
-        self.filename = fd.askopenfilename(
-        title=title,
-        initialdir='/',
-        filetypes=(("PDF Files", "*.pdf"),))
+        self.filename = FileManager().askFile(title=title)
 
 
         
@@ -562,49 +588,54 @@ class Pdftools(MDApp):
         pagesStr: pages that entered by user(e.x. - 1,2,5-8)
         """
 
-        # Create a blank list of pages
-        ls = []
+        try:
+            # Create a blank list of pages
+            ls = []
 
-        # Split each page number by ,
-        splitted = pagesStr.split(",")
+            # Split each page number by ,
+            splitted = pagesStr.split(",")
 
-        # Iterate through splitted numbers
-        for i in splitted:
-            # If current item is a range of pages
-            if "-" in str(i):
-                # merge a list of unpacked range into ls
-                ls.extend(list(range(int(i.split("-")[0]) - 1, int(i.split("-")[1]))))
-            else:
-                # Add the page number to ls
-                # Note: 1 is subtracted from current page number because page index starts with 0
-                ls.append(int(i) - 1)
-
-
-        # Create a blank writer object
-        writer = PyPDF2.PdfFileWriter()
+            # Iterate through splitted numbers
+            for i in splitted:
+                # If current item is a range of pages
+                if "-" in str(i):
+                    # merge a list of unpacked range into ls
+                    ls.extend(list(range(int(i.split("-")[0]) - 1, int(i.split("-")[1]))))
+                else:
+                    # Add the page number to ls
+                    # Note: 1 is subtracted from current page number because page index starts with 0
+                    ls.append(int(i) - 1)
 
 
-        # Iterate through pages that is entered by user
-        for i in ls:
-            # Add current page to writer object
-            writer.addPage(self.reader.getPage(i))
+            # Create a blank writer object
+            writer = PyPDF2.PdfFileWriter()
 
-        # Set writer object as a property of Tool object
-        Tool.pdf_writer = writer
-
-        # Set ls as a property of Tool object
-        Tool.pages = ls
+            # Iterate through pages that is entered by user
+            for i in ls:
+                # Add current page to writer object
+                writer.addPage(self.reader.getPage(i))
 
 
-        # Set requested_pages as a property of Tool object
-        Tool.requested_pages = ls
+            # Set writer object as a property of Tool object
+            Tool.pdf_writer = writer
+
+            # Set ls as a property of Tool object
+            Tool.pages = ls
 
 
-        # Close the currently opened setOperationPagesDialog
-        self.setOperationPagesDialog.dismiss()
+            # Set requested_pages as a property of Tool object
+            Tool.requested_pages = ls
 
-        # Show a success message
-        toast(text="Operation pages set successfully!")
+
+            # Close the currently opened setOperationPagesDialog
+            self.setOperationPagesDialog.dismiss()
+
+            # Show a success message
+            toast(text="Operation pages set successfully!")
+        except IndexError as e:
+            toast(text=f"Pages must between 1 and {self.reader.getNumPages()}", background=[1,0,0,1])
+        except ValueError as verror:
+            toast(text="Please enter number of operation pages!", background=[1,0,0,1])
 
     def toggleCheckAll(self, widget):
         """

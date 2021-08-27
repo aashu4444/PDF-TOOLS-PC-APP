@@ -11,6 +11,7 @@ style = '''
     height: "50dp"
 
     MDTextField:
+        id:EncPass
         icon_left: "key-variant"
         hint_text: "Enter password to set."
         on_text: app.text_ontext(self)

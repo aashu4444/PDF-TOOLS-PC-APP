@@ -11,9 +11,12 @@ style = '''
     height: "50dp"
 
     MDTextField:
+        id:OperationPagesInp
         icon_left: "book-open-page-variant"
         hint_text: "Enter page number(s)."
-        on_text: app.text_ontext(self)
+        on_text: app.text_ontext(self, "int")
+        helper_text: "Enter valid page"
+        helper_text_mode: "on_error"
 '''
 
 Builder.load_string(style)

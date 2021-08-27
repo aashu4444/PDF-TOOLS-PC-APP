@@ -44,7 +44,7 @@ class ActionCheckBox():
 
     def uncheck(self, changeMyFilesCheckboxState=True):
         if len(self.appToolbar.right_action_items) != 0:
-            self.appToolbar.right_action_items = [self.notCheckIconLs, ["trash-can-outline", lambda x: self.app.onToolbarTrashCanClick(x)]]
+            self.appToolbar.right_action_items = [self.notCheckIconLs]
             self.checked = False
 
 

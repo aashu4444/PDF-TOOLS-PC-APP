@@ -21,7 +21,7 @@ KV = '''
                     text:"Merge position : "
                 MDTextField:
                     hint_text:"Enter position"
-                    on_text:root.app.text_ontext(self)
+                    on_text:root.app.text_ontext(self, "int")
 
 
                 MDLabel:
@@ -31,7 +31,7 @@ KV = '''
                     MDTextField:
                         hint_text:"From"
                         text: "1"
-                        on_text: root.app.set(key="MergeFrom", value=self.text)
+                        on_text: root.app.set(key="MergeFrom", value=self.text, forceInt=True, widget=self)
                     MDTextField:
                         hint_text:"To"
                         id:MergeTO
